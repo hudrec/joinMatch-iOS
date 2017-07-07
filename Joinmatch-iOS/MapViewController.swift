@@ -9,6 +9,8 @@
 import UIKit
 import MapKit
 import CoreLocation
+import Alamofire
+import SwiftyJSON
 class MapViewController: UIViewController, CLLocationManagerDelegate {
     
     
@@ -36,11 +38,36 @@ class MapViewController: UIViewController, CLLocationManagerDelegate {
         let location = CLLocationCoordinate2D(latitude: -12.046373, longitude: -77.042754)
         
         mapView.setRegion(MKCoordinateRegionMakeWithDistance(location, 2000, 2000), animated: true)
-            
-        let match = MatchAnnotation(title: "Partido de futbol", subtitle: "Plaza 2 de mayo", coordinate: location)
         
-        mapView.addAnnotation(match)
-    
+        let sportsEndPoint = "https://fast-forest-67021.herokuapp.com/api/events/"
+        Alamofire.request(sportsEndPoint).responseJSON(completionHandler: {
+            response in
+            switch response.result {
+            case .success:
+                print("Everything is OK")
+                let jsonObject = JSON(response.result.value!)
+                if let events = jsonObject.array {
+                    for event in events{
+                        let latitude = Double(event["latitude"].string!)
+                        let longitude = Double(event["longitude"].string!)
+                        let name = event["name"].string
+                       
+                        let match = MatchAnnotation(title: name!, subtitle:  "Partido de futbol", coordinate: CLLocationCoordinate2D(latitude: latitude!, longitude: longitude!))
+
+                        
+                        self.mapView.addAnnotation(match)
+
+                    }
+                    
+                    
+                }
+                
+            case .failure(let error):
+                print("\(error)")
+            }
+        })
+
+        
     }
     
     override func didReceiveMemoryWarning() {
